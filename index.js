@@ -1,40 +1,56 @@
 const express = require('express');
 const ytdl = require('ytdl-core');
+const ffmpeg = require('fluent-ffmpeg');
+const fs = require('fs');
 const app = express();
 
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/test.html');
+  res.sendFile(__dirname + '/test.html');
 });
 
-app.get('/download', async (req, res, next) => {
-    try {
-        const url = req.query.url;
-        const format = req.query.format;
-        const info = await ytdl.getInfo(url);
-        const formats = ytdl.filterFormats(info.formats, 'video');
-        const formatMap = {};
-        for (let i = 0; i < formats.length; i++) {
-            const format = formats[i];
-            const quality = format.qualityLabel || format.resolution + 'p';
-            formatMap[quality] = format;
-        }
-        if (!formatMap[format]) {
-            throw new Error(`No such format found: ${format}`);
-        }
-        res.header('Content-Disposition', 'attachment; filename="video.mp4"');
-        ytdl(url, {
-            format: formatMap[format]
-        }).pipe(res);
-    } catch (err) {
-        next(err);
-    }
-});
+app.get('/download', (req, res) => {
+  const videoURL = req.query.url;
+  const downloadType = req.query.type;
+  const quality = req.query.quality;
+  const video = ytdl(videoURL, { quality: quality });
+  const audio = ytdl(videoURL, { filter: 'audioonly' });
 
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).send('Something broke!');
+  if (downloadType === 'video') {
+    res.header('Content-Disposition', 'attachment; filename="video.mp4"');
+    video.pipe(res);
+  } else if (downloadType === 'audio') {
+    res.header('Content-Disposition', 'attachment; filename="audio.mp3"');
+    audio.pipe(res);
+  } else if (downloadType === 'both') {
+    const outputFileName = 'output.mp4';
+    const videoStream = video.pipe(fs.createWriteStream('video.mp4'));
+    const audioStream = audio.pipe(fs.createWriteStream('audio.mp3'));
+
+    videoStream.on('finish', () => {
+      audioStream.on('finish', () => {
+        ffmpeg()
+          .input('video.mp4')
+          .input('audio.mp3')
+          .outputOptions('-c copy')
+          .on('error', (err) => {
+            console.log(`Error: ${err.message}`);
+          })
+          .on('end', () => {
+            res.header('Content-Disposition', `attachment; filename="${outputFileName}"`);
+            res.download(outputFileName, () => {
+              fs.unlink('video.mp4', () => {});
+              fs.unlink('audio.mp3', () => {});
+              fs.unlink(outputFileName, () => {});
+            });
+          })
+          .save(outputFileName);
+      });
+    });
+  } else {
+    res.send('Invalid download type');
+  }
 });
 
 app.listen(3000, () => {
-    console.log('Server started on http://localhost:3000');
+  console.log('Server running on port 3000');
 });
