@@ -1,25 +1,33 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<title>YouTube Video Downloader</title>
-	</head>
-	<body>
-		<h1>YouTube Video Downloader</h1>
-		<form action="/download" method="GET">
-			<label for="url">YouTube URL:</label>
-			<input type="text" id="url" name="url">
-			<br><br>
-			<label for="format">Format:</label>
-			<select id="format" name="format">
-				<option value="144p">144p</option>
-				<option value="240p">240p</option>
-				<option value="360p">360p</option>
-				<option value="480p">480p</option>
-				<option value="720p">720p</option>
-				<option value="1080p">1080p</option>
-			</select>
-			<br><br>
-			<input type="submit" value="Download Video">
-		</form>
-	</body>
+  <head>
+    <meta charset="utf-8">
+    <title>YouTube Downloader</title>
+  </head>
+  <body>
+    <h1>YouTube Downloader</h1>
+    <form method="get" action="/download">
+      <label for="url">Video URL:</label>
+      <input type="text" name="url" id="url" placeholder="Enter video URL" required>
+      <br><br>
+      <label for="type">Download Type:</label>
+      <select name="type" id="type">
+        <option value="video">Video</option>
+        <option value="audio">Audio</option>
+        <option value="both">Video and Audio</option>
+      </select>
+      <br><br>
+      <label for="quality">Video Quality:</label>
+      <select name="quality" id="quality">
+        <option value="highest">Highest</option>
+        <option value="lowest">Lowest</option>
+        <option value="hd720">720p</option>
+        <option value="medium">480p</option>
+        <option value="small">360p</option>
+        <option value="tiny">240p</option>
+      </select>
+      <br><br>
+      <input type="submit" value="Download">
+    </form>
+  </body>
 </html>
